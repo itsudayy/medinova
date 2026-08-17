@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { HeartPulse, Phone, Mail, MapPin, AlertTriangle } from 'lucide-react';
+import { HeartPulse, Phone, Mail, MapPin } from 'lucide-react';
 import { FacebookIcon, TwitterIcon, InstagramIcon, LinkedinIcon } from './ui/SocialIcons';
 
 const linkGroups = [
@@ -88,16 +88,8 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-xl px-4 py-3 flex items-start gap-2.5">
-          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-            MediNova is a demo project and does not provide real medical services. In a genuine
-            emergency, contact your local emergency number immediately.
-          </p>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500 text-center">
-          © 2026 MediNova. All rights reserved. Built as a portfolio demo project.
+        <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500 text-center">
+          © 2026 MediNova. All rights reserved.
         </div>
       </div>
     </footer>
