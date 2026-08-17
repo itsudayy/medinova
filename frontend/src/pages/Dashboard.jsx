@@ -3,6 +3,8 @@ import { CalendarClock, Stethoscope, Star, Sparkles, Clock3, Search, UserCog, Do
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import NoticeBoard from '../components/NoticeBoard';
 import StarRating from '../components/ui/StarRating';
 import { fetchPatientStats, fetchDoctorStats } from '../services/appointmentService';
 
@@ -42,10 +44,10 @@ export default function Dashboard() {
   const cards = isApprovedDoctor ? doctorCards : isPatient ? patientCards : null;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-6 py-10">
+      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 w-full">
         <div className="mb-8">
           <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">
             Welcome back, {profile?.name?.split(' ')[0]} 👋
@@ -117,7 +119,7 @@ export default function Dashboard() {
         {isPatient && (
           <Link
             to="/doctors"
-            className="flex items-center justify-between gap-6 flex-wrap bg-gradient-to-br from-brand-600 to-teal-accent rounded-2xl p-8 text-white hover:shadow-lg transition-shadow"
+            className="group flex items-center justify-between gap-6 flex-wrap bg-gradient-to-br from-brand-600 to-teal-accent rounded-2xl p-8 text-white hover:shadow-lg hover:shadow-brand-600/25 hover:-translate-y-0.5 transition-all duration-300"
           >
             <div className="flex items-center gap-4">
               <div className="bg-white/15 p-3 rounded-xl">
@@ -134,7 +136,7 @@ export default function Dashboard() {
         {isApprovedDoctor && (
           <Link
             to="/doctor/profile"
-            className="flex items-center justify-between gap-6 flex-wrap bg-gradient-to-br from-brand-600 to-teal-accent rounded-2xl p-8 text-white hover:shadow-lg transition-shadow"
+            className="group flex items-center justify-between gap-6 flex-wrap bg-gradient-to-br from-brand-600 to-teal-accent rounded-2xl p-8 text-white hover:shadow-lg hover:shadow-brand-600/25 hover:-translate-y-0.5 transition-all duration-300"
           >
             <div className="flex items-center gap-4">
               <div className="bg-white/15 p-3 rounded-xl">
@@ -151,7 +153,7 @@ export default function Dashboard() {
         {profile?.role === 'admin' && (
           <Link
             to="/admin"
-            className="flex items-center justify-between gap-6 flex-wrap bg-gradient-to-br from-brand-600 to-teal-accent rounded-2xl p-8 text-white hover:shadow-lg transition-shadow"
+            className="group flex items-center justify-between gap-6 flex-wrap bg-gradient-to-br from-brand-600 to-teal-accent rounded-2xl p-8 text-white hover:shadow-lg hover:shadow-brand-600/25 hover:-translate-y-0.5 transition-all duration-300"
           >
             <div className="flex items-center gap-4">
               <div className="bg-white/15 p-3 rounded-xl">
@@ -176,7 +178,10 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        <NoticeBoard className="mt-8" />
       </main>
+      <Footer />
     </div>
   );
 }

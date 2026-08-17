@@ -38,8 +38,8 @@ export default function Login() {
     setError('');
     setGoogleLoading(true);
     try {
-      const { isNewUser } = await loginWithGoogle();
-      navigate(isNewUser ? '/complete-profile' : '/dashboard');
+      const { redirecting } = await loginWithGoogle();
+      if (!redirecting) navigate('/dashboard'); // a redirect reloads the page itself
     } catch (err) {
       // A user closing the Google popup isn't an error worth surfacing.
       if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {

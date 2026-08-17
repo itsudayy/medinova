@@ -4,7 +4,6 @@ import PrivateRoute from './components/PrivateRoute';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import CompleteProfile from './pages/CompleteProfile';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Dashboard from './pages/Dashboard';
@@ -26,14 +25,6 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route
-          path="/complete-profile"
-          element={
-            <PrivateRoute>
-              <CompleteProfile />
-            </PrivateRoute>
-          }
-        />
         <Route
           path="/dashboard"
           element={

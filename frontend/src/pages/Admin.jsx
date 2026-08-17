@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ShieldCheck, ShieldAlert, Check, X, Stethoscope } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
@@ -17,14 +18,15 @@ export default function Admin() {
   const isAdmin = profile?.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       <Navbar />
-      <main className="max-w-4xl mx-auto px-6 py-10">
+      <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-10">
         <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
           <ShieldCheck className="w-6 h-6 text-brand-600 dark:text-brand-400" /> Admin
         </h1>
         {isAdmin ? <DoctorApprovalPanel /> : <BootstrapAdminPanel onBootstrapped={refreshProfile} />}
       </main>
+      <Footer />
     </div>
   );
 }

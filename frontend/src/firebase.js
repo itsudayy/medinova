@@ -19,4 +19,7 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
+// Always show the account chooser rather than silently reusing whichever
+// Google account the browser happens to be signed into.
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 export default app;

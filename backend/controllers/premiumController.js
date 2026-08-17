@@ -2,6 +2,10 @@ const stripe = require('../config/stripe');
 
 const PREMIUM_PRICE_CENTS = 9999; // $99.99 one-time
 
+// CLIENT_URL may hold a comma-separated allow-list for CORS. Stripe redirect
+// URLs need exactly one origin, so always take the first entry.
+const clientUrl = () => (process.env.CLIENT_URL || '').split(',')[0].trim();
+
 async function createPremiumCheckout(req, res) {
   try {
     const user = req.mongoUser;
@@ -13,12 +17,16 @@ async function createPremiumCheckout(req, res) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
+      // Pin the session to the signed-in user's own email — see the same note
+      // in appointmentController: without it Stripe's Link wallet suggests
+      // whichever address this browser used last.
+      customer_email: user.email,
       line_items: [
         {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'MediCare+ Premium Membership (1 year)',
+              name: 'MediNova Premium Membership (1 year)',
               description: 'Priority booking, exclusive seminars & health programs, premium-only discount coupons',
             },
             unit_amount: PREMIUM_PRICE_CENTS,
@@ -26,8 +34,8 @@ async function createPremiumCheckout(req, res) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.CLIENT_URL}/premium/confirm?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL}/premium`,
+      success_url: `${clientUrl()}/premium/confirm?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${clientUrl()}/premium`,
       // `purpose` lets confirmPremium reject session ids from other flows
       // (e.g. an appointment payment) being replayed here.
       metadata: { userId: user._id.toString(), purpose: 'premium' },

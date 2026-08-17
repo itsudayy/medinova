@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { CalendarClock, Video, Building2, Tag } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CalendarClock, Video, Building2, Tag, CalendarX } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import StarRating from '../components/ui/StarRating';
 import ReviewForm, { SubmittedReview } from '../components/ReviewForm';
 import PrescriptionForm, { PrescriptionView } from '../components/PrescriptionForm';
@@ -41,16 +43,46 @@ export default function MyAppointments() {
   }, [isDoctor]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       <Navbar />
-      <main className="max-w-3xl mx-auto px-6 py-10">
+      <main className="flex-1 w-full max-w-3xl mx-auto px-6 py-10">
         <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white mb-6">My Appointments</h1>
 
-        {loading && <p className="text-slate-400 dark:text-slate-500">Loading...</p>}
+        {loading && (
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-1/3 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                    <div className="h-3 w-1/2 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {!loading && appointments.length === 0 && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-10 text-center text-slate-500 dark:text-slate-400">
-            No appointments yet.
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+              <CalendarX className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+            </div>
+            <p className="font-display font-semibold text-slate-900 dark:text-white">No appointments yet</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+              {isDoctor
+                ? 'Bookings from patients will appear here.'
+                : 'Book your first consultation to get started.'}
+            </p>
+            {!isDoctor && (
+              <Link
+                to="/doctors"
+                className="inline-block mt-5 text-sm font-medium text-brand-600 dark:text-brand-400 hover:underline"
+              >
+                Find a doctor →
+              </Link>
+            )}
           </div>
         )}
 
@@ -124,6 +156,7 @@ export default function MyAppointments() {
           ))}
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

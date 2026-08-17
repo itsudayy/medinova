@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Briefcase, Clock, ArrowLeft, Video, Building2, Tag, X } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import StarRating from '../components/ui/StarRating';
+import SmartImage from '../components/ui/SmartImage';
 import DoctorReviews from '../components/DoctorReviews';
 import { fetchDoctorById } from '../services/doctorService';
 import { createAppointment, checkCoupon } from '../services/appointmentService';
@@ -92,9 +94,9 @@ export default function DoctorDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       <Navbar />
-      <main className="max-w-3xl mx-auto px-6 py-10">
+      <main className="flex-1 max-w-3xl mx-auto px-6 py-10 w-full">
         <button
           onClick={() => navigate('/doctors')}
           className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 mb-6"
@@ -108,9 +110,23 @@ export default function DoctorDetail() {
         {doctor && (
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8">
             <div className="flex items-start gap-5">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-500 to-teal-accent flex items-center justify-center text-white text-xl font-semibold shrink-0">
-                {doctor.user?.name?.[0]?.toUpperCase() || 'D'}
-              </div>
+              {doctor.user?.photoURL ? (
+                <SmartImage
+                  src={doctor.user.photoURL}
+                  alt={doctor.user?.name || 'Doctor'}
+                  wrapperClassName="w-20 h-20 rounded-2xl shrink-0"
+                  className="w-20 h-20 object-cover rounded-2xl"
+                  fallback={
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-500 to-teal-accent flex items-center justify-center text-white text-2xl font-semibold shrink-0">
+                      {doctor.user?.name?.[0]?.toUpperCase() || 'D'}
+                    </div>
+                  }
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-500 to-teal-accent flex items-center justify-center text-white text-2xl font-semibold shrink-0">
+                  {doctor.user?.name?.[0]?.toUpperCase() || 'D'}
+                </div>
+              )}
               <div>
                 <h1 className="font-display text-2xl font-bold text-slate-900 dark:text-white">{doctor.user?.name}</h1>
                 <p className="text-brand-600 dark:text-brand-400 font-medium">{doctor.specialization}</p>
@@ -257,6 +273,7 @@ export default function DoctorDetail() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

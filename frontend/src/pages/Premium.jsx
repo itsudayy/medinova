@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Crown, Check, Zap, Users, Calendar, BookOpen, Ticket } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import Button from '../components/ui/Button';
 import { createPremiumCheckout } from '../services/premiumService';
 import { useAuth } from '../context/AuthContext';
@@ -53,9 +54,9 @@ export default function Premium() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       <Navbar />
-      <main className="max-w-5xl mx-auto px-6 py-12">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-6 py-12">
         {isPremium ? (
           <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl p-8 text-center mb-12">
             <Crown className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto mb-3" />
@@ -122,6 +123,7 @@ export default function Premium() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

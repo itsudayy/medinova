@@ -38,8 +38,8 @@ export default function Register() {
     setError('');
     setGoogleLoading(true);
     try {
-      const { isNewUser } = await loginWithGoogle();
-      navigate(isNewUser ? '/complete-profile' : '/dashboard');
+      const { redirecting } = await loginWithGoogle();
+      if (!redirecting) navigate('/dashboard'); // a redirect reloads the page itself
     } catch (err) {
       if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
         setError(authErrorMessage(err));

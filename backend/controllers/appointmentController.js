@@ -5,6 +5,10 @@ const { findValidCoupon, computeDiscount } = require('./couponController');
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// CLIENT_URL may hold a comma-separated allow-list for CORS. Stripe redirect
+// URLs need exactly one origin, so always take the first entry.
+const clientUrl = () => (process.env.CLIENT_URL || '').split(',')[0].trim();
+
 // Creates a pending appointment + a Stripe Checkout Session, returns the
 // session URL for the frontend to redirect to. Nothing is confirmed yet —
 // that only happens once Stripe confirms the payment (see confirmBooking).
@@ -75,6 +79,10 @@ async function createAppointment(req, res) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
+      // Pin the session to the signed-in user's own email. Without this Stripe
+      // leaves the field open and its Link wallet offers whichever address was
+      // last used in this browser — which looks like another user's account.
+      customer_email: req.mongoUser.email,
       line_items: [
         {
           price_data: {
@@ -85,8 +93,8 @@ async function createAppointment(req, res) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.CLIENT_URL}/appointments/confirm?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL}/doctors/${doctorId}`,
+      success_url: `${clientUrl()}/appointments/confirm?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${clientUrl()}/doctors/${doctorId}`,
       metadata: { appointmentId: appointment._id.toString(), purpose: 'appointment', userId: req.mongoUser._id.toString() },
     });
 

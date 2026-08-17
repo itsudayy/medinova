@@ -3,6 +3,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
 } from 'firebase/auth';
@@ -11,30 +13,62 @@ import api from '../services/api';
 
 const AuthContext = createContext(null);
 
+// Google gives us an identity but no application role. Everyone who signs in
+// with Google is a patient — doctors are onboarded through the regular signup
+// form (which asks for a role) and then approved by an admin, so there is no
+// case where a Google sign-in should silently create a doctor account.
+const GOOGLE_DEFAULT_ROLE = 'patient';
+
 export function AuthProvider({ children }) {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [profile, setProfile] = useState(null); // MongoDB user doc (has role)
-  const [profileMissing, setProfileMissing] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Syncs a Google identity into Mongo. syncUser is create-or-return, so an
+  // existing user keeps their stored role/status and no duplicate is made —
+  // the role below only applies the very first time.
+  async function syncGoogleUser(user) {
+    const { data } = await api.post('/users/sync', {
+      name: user.displayName || user.email?.split('@')[0] || 'MediNova user',
+      role: GOOGLE_DEFAULT_ROLE,
+    });
+    setProfile(data);
+    return data;
+  }
+
   useEffect(() => {
+    // If a popup was blocked we fall back to a full-page redirect, so on load
+    // we have to check whether we're coming back from one.
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) return syncGoogleUser(result.user);
+      })
+      .catch(() => {
+        /* no pending redirect, or it failed — onAuthStateChanged still runs */
+      });
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
         try {
           const { data } = await api.get('/users/me');
           setProfile(data);
-          setProfileMissing(false);
         } catch (err) {
-          setProfile(null);
-          // A 404 specifically means "signed in, but never finished signup" —
-          // recoverable by sending them to /complete-profile. Any other error
-          // (server down) must NOT push an existing user into a signup flow.
-          setProfileMissing(err.response?.status === 404);
+          // A 404 means the Firebase identity exists but was never synced to
+          // Mongo (e.g. a Google sign-in that got interrupted). Self-heal by
+          // syncing now instead of stranding the user in a broken session.
+          if (err.response?.status === 404) {
+            try {
+              await syncGoogleUser(user);
+            } catch {
+              setProfile(null);
+            }
+          } else {
+            setProfile(null);
+          }
         }
       } else {
         setProfile(null);
-        setProfileMissing(false);
       }
       setLoading(false);
     });
@@ -56,36 +90,36 @@ export function AuthProvider({ children }) {
     return cred.user;
   }
 
-  // Google sign-in doesn't collect a role, so we can't call /users/sync blind
-  // the way register() does. Instead: sign in, then check whether a Mongo
-  // profile already exists. If not, tell the caller so it can route to a
-  // one-time role-selection step before we ever call sync.
+  // One call handles both new and returning Google users: sign in, then sync.
+  // The backend decides whether that's a create or a fetch, which is what keeps
+  // this from ever producing a duplicate account.
   async function loginWithGoogle() {
-    const cred = await signInWithPopup(auth, googleProvider);
+    let cred;
     try {
-      const { data } = await api.get('/users/me');
-      setProfile(data);
-      return { user: cred.user, isNewUser: false };
+      cred = await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      if (err.response?.status === 404) {
-        return { user: cred.user, isNewUser: true };
+      // Popups are blocked by default in some browsers and in embedded
+      // webviews. Redirecting is the supported fallback — the result is picked
+      // up by getRedirectResult() when the app reloads.
+      if (
+        err.code === 'auth/popup-blocked' ||
+        err.code === 'auth/operation-not-supported-in-this-environment'
+      ) {
+        await signInWithRedirect(auth, googleProvider);
+        return { redirecting: true };
       }
-      // Any other failure (server down, 500) would leave the user signed into
-      // Firebase but with no app profile — a half-authenticated state that
-      // PrivateRoute would still let through. Undo the sign-in so a retry
-      // starts clean instead.
+      throw err;
+    }
+
+    try {
+      await syncGoogleUser(cred.user);
+      return { user: cred.user };
+    } catch (err) {
+      // Signed into Firebase but the profile never synced (server down, etc).
+      // Undo the sign-in so the user isn't left half-authenticated.
       await signOut(auth);
       throw err;
     }
-  }
-
-  // Finishes the Google sign-up flow once the user has picked a role —
-  // same /users/sync endpoint the email/password register() flow uses.
-  async function completeGoogleProfile({ name, role, phone }) {
-    const { data } = await api.post('/users/sync', { name, role, phone });
-    setProfile(data);
-    setProfileMissing(false);
-    return data;
   }
 
   async function logout() {
@@ -104,12 +138,10 @@ export function AuthProvider({ children }) {
   const value = {
     firebaseUser,
     profile,
-    profileMissing,
     loading,
     register,
     login,
     loginWithGoogle,
-    completeGoogleProfile,
     logout,
     refreshProfile,
   };

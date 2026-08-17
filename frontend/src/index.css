@@ -52,3 +52,23 @@ body {
     transition: none;
   }
 }
+
+/* Announcement ticker: the track holds two identical copies of the list, so
+   translating by -50% lands the second copy exactly where the first started
+   and the restart is invisible. */
+.marquee-track {
+  animation: marquee-scroll 38s linear infinite;
+  width: max-content;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
