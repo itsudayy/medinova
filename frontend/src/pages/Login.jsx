@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AuthLayout from '../components/AuthLayout';
@@ -9,12 +9,26 @@ import GoogleIcon from '../components/ui/GoogleIcon';
 import authErrorMessage from '../utils/authError';
 
 export default function Login() {
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, firebaseUser, loading: authLoading, redirectError } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/dashboard';
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // A redirect-based Google sign-in reloads the whole page, so the navigate()
+  // inside handleGoogle is long gone by the time we land back here. Route on
+  // the restored session instead — this also stops an already-logged-in user
+  // from sitting on the login form.
+  useEffect(() => {
+    if (!authLoading && firebaseUser) navigate(from, { replace: true });
+  }, [authLoading, firebaseUser, from, navigate]);
+
+  useEffect(() => {
+    if (redirectError) setError(authErrorMessage(redirectError));
+  }, [redirectError]);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -26,7 +40,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(form.email, form.password);
-      navigate('/dashboard');
+      navigate(from, { replace: true });
     } catch (err) {
       setError(authErrorMessage(err));
     } finally {
@@ -38,8 +52,10 @@ export default function Login() {
     setError('');
     setGoogleLoading(true);
     try {
+      // `redirecting` means the browser is navigating away to Google — the
+      // effect above handles routing once we land back with a session.
       const { redirecting } = await loginWithGoogle();
-      if (!redirecting) navigate('/dashboard'); // a redirect reloads the page itself
+      if (!redirecting) navigate(from, { replace: true });
     } catch (err) {
       // A user closing the Google popup isn't an error worth surfacing.
       if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {

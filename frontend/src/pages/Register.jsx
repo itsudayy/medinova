@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Phone, Mail, Lock, Stethoscope, UserRound, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -9,12 +9,22 @@ import GoogleIcon from '../components/ui/GoogleIcon';
 import authErrorMessage from '../utils/authError';
 
 export default function Register() {
-  const { register, loginWithGoogle } = useAuth();
+  const { register, loginWithGoogle, firebaseUser, loading: authLoading, redirectError } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'patient', phone: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Same reason as on the login page: a redirect-based Google sign-in reloads
+  // the page, so routing has to happen off the restored session.
+  useEffect(() => {
+    if (!authLoading && firebaseUser) navigate('/dashboard', { replace: true });
+  }, [authLoading, firebaseUser, navigate]);
+
+  useEffect(() => {
+    if (redirectError) setError(authErrorMessage(redirectError));
+  }, [redirectError]);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });

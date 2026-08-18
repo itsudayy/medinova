@@ -19,10 +19,25 @@ const AuthContext = createContext(null);
 // case where a Google sign-in should silently create a doctor account.
 const GOOGLE_DEFAULT_ROLE = 'patient';
 
+// signInWithPopup depends on a cross-origin handshake with the Firebase auth
+// handler, which browsers break in several ways we can't control: popup
+// blockers, embedded webviews, third-party-storage partitioning, and COOP
+// policies (which usually surface as the generic auth/internal-error). When it
+// fails for an environmental reason — rather than the user cancelling — fall
+// back to a full-page redirect, which needs neither a popup nor third-party
+// storage. getRedirectResult() finishes that flow on the way back.
+const POPUP_ENV_FAILURES = new Set([
+  'auth/popup-blocked',
+  'auth/operation-not-supported-in-this-environment',
+  'auth/web-storage-unsupported',
+  'auth/internal-error',
+]);
+
 export function AuthProvider({ children }) {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [profile, setProfile] = useState(null); // MongoDB user doc (has role)
   const [loading, setLoading] = useState(true);
+  const [redirectError, setRedirectError] = useState(null);
 
   // Syncs a Google identity into Mongo. syncUser is create-or-return, so an
   // existing user keeps their stored role/status and no duplicate is made —
@@ -38,13 +53,16 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     // If a popup was blocked we fall back to a full-page redirect, so on load
-    // we have to check whether we're coming back from one.
+    // we have to check whether we're coming back from one. onAuthStateChanged
+    // picks the session up either way; this call exists so a failed redirect
+    // surfaces in the UI instead of vanishing silently.
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) return syncGoogleUser(result.user);
       })
-      .catch(() => {
-        /* no pending redirect, or it failed — onAuthStateChanged still runs */
+      .catch((err) => {
+        console.error('Google redirect sign-in failed', err);
+        setRedirectError(err);
       });
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -98,15 +116,9 @@ export function AuthProvider({ children }) {
     try {
       cred = await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      // Popups are blocked by default in some browsers and in embedded
-      // webviews. Redirecting is the supported fallback — the result is picked
-      // up by getRedirectResult() when the app reloads.
-      if (
-        err.code === 'auth/popup-blocked' ||
-        err.code === 'auth/operation-not-supported-in-this-environment'
-      ) {
+      if (POPUP_ENV_FAILURES.has(err?.code)) {
         await signInWithRedirect(auth, googleProvider);
-        return { redirecting: true };
+        return { redirecting: true }; // page navigates to Google; nothing more to do here
       }
       throw err;
     }
@@ -139,6 +151,7 @@ export function AuthProvider({ children }) {
     firebaseUser,
     profile,
     loading,
+    redirectError,
     register,
     login,
     loginWithGoogle,
